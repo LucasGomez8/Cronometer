@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.scss';
 import {faArrowUp, faL, faPlay} from '@fortawesome/free-solid-svg-icons';
 import {faArrowDown} from '@fortawesome/free-solid-svg-icons';
@@ -12,15 +12,7 @@ function App() {
   const [breakT, setBreakT] = useState(3);
   const [sessionT, setSessionT] = useState(5);
   const [on, setOn] = useState(false);
-  const [breakOn, setBreakOn] = useState(false);
-  const [audio, setAudio] = useState(
-    new Audio("./assets/breakAudio.mp3")
-  )
-
-  const playSound = () => {
-    audio.currentTime = 0;
-    audio.play();
-  }
+  const [typp, setTypp] = useState("Session");
 
 
 
@@ -50,6 +42,42 @@ function App() {
     )
   }
 
+  const start = () =>{
+    
+    if (duration > 0) {
+      setDuration((duration) => duration - 1);
+    }
+    if (duration === 0) {
+      if (typp === "Session") {
+        console.log(duration);
+        setTypp("Break");
+        setDuration(breakT);
+        playSound();
+      } else {
+        setDuration(sessionT);
+        setTypp("Session");
+        playSound();
+      }
+    }
+  }
+
+  useEffect(()=>{
+    if (on) {
+      const interval = setInterval(start, 1000);
+      return () => clearInterval(interval);
+    }
+
+  }); 
+
+  const changePause = () =>{
+    if (on==false){
+      setOn(true);
+    }
+    else{
+      setOn(false);
+    }
+  }
+
   const changeTime = (actual,type) => {
     if(type == 'break'){
       if(breakT <= 60 && actual < 0){
@@ -62,50 +90,18 @@ function App() {
         return;
       }
       setSessionT((prev)=>prev+actual);
-      if(on==false){
+      if(!on){
 
         setDuration((prev)=>prev+actual);
         }
     }
   }
 
-  const start = () =>{
-    let sec= 1000;
-    let datsec = new Date().getTime();
-    let datnextsec = new Date().getTime()+sec;
-    let isBreak=breakOn;
-    if(!on){
-      let interval = setInterval(()=>{
-        datsec = new Date().getTime();
-          if(datsec>datnextsec){
-            
-            setDuration((prev)=>{
-              if(prev <=0 && !breakOn){
-                playSound();
-                isBreak=true;
-                setBreakOn(true);
-                return breakT;
-              }
-              else if (prev <=0 && breakOn){
-                playSound();
-                isBreak=false;
-                setBreakOn(false);
-                return sessionT;
-              }
-               return prev - 1;
-              });
-            datnextsec+=sec;
-          }
-      
-      },30);
-    localStorage.clear();
-    localStorage.setItem("intervalo",interval);
-    }
-    if(on){
-      clearInterval(localStorage.getItem("intervalo"));
-    }
-    setOn(!on);
+  const playSound = () =>{
+    const sound = document.getElementById("clip");
+    sound.play();
   }
+  
   const restart = () => {
     setDuration(25*60);
     setBreakT(5*60);
@@ -128,8 +124,8 @@ function App() {
           </div>
         </div>
         <div className='row justify-content-center text-center'>
-          <div className='col-md-6'>
-            <h3>{breakOn ? 'Break' : 'Session'}</h3>
+          <div className='col-md-6' style={controllerStyle}>
+            <h3>{typp}</h3>
           </div>
         </div>
         <div className='row justify-content-center text-center m-5'>
@@ -137,7 +133,7 @@ function App() {
             {timer(duration)}
           </div>
           <div className='row justify-content-center' style={controllerStyle}>
-            <div className='col-2' onClick={start}>
+            <div className='col-2' onClick={changePause}>
               {
                 on ?
                 <FontAwesomeIcon icon={faPause}></FontAwesomeIcon>
@@ -170,6 +166,7 @@ return(
       <div className='col-md-8'>
         {timer(conTime)}
       </div>
+      <audio id="clip" src='https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav'/>
     </div>
   </div>
 );
